@@ -1,6 +1,3 @@
-// Converted from UnityScript to C# at http://www.M2H.nl/files/js_to_c.php - by Mike Hergaarden
-// Do test the code! You usually need to change a few small bits.
-
 using UnityEngine;
 using System.Collections;
 using System.IO;
@@ -99,10 +96,10 @@ public class JPGEncoder
 		35,36,48,49,57,58,62,63
 	};
 
-	public int[] YTable = new int[64];
-	public int[] UVTable = new int[64];
-	public float[] fdtbl_Y = new float[64];
-	public float[] fdtbl_UV = new float[64];
+	private int[] YTable = new int[64];
+	private int[] UVTable = new int[64];
+	private float[] fdtbl_Y = new float[64];
+	private float[] fdtbl_UV = new float[64];
 
 	private void InitQuantTables ( int sf  ){
 		int i;
@@ -654,6 +651,7 @@ public class JPGEncoder
 	private BitmapData image;
 	private int sf = 0;
 	private string path;
+	private int cores = 0;
 	//Contructor that doesn't save the data to disk
 	public JPGEncoder( Texture2D texture, float quality) : this(texture, quality, ""){ }
 	public JPGEncoder( Texture2D texture, float quality, string path )
@@ -665,6 +663,8 @@ public class JPGEncoder
 		quality = Mathf.Clamp(quality, 1, 100);
 		sf = (quality < 50) ? (int)(5000 / quality) : (int)(200 - quality*2);
 		
+		cores = SystemInfo.processorCount;
+		
 		Thread thread = new Thread(DoEncoding);
 		thread.Start();		
 	}
@@ -674,8 +674,6 @@ public class JPGEncoder
 	*/
 	private void DoEncoding()
 	{
-//		System.DateTime dt = System.DateTime.Now;
-		
 		isDone = false;
 	
 		// Create tables -- technically we could only do this once for multiple encodes
@@ -685,8 +683,6 @@ public class JPGEncoder
 		
 		// Do actual encoding
 		Encode();
-		
-//		Debug.Log("C# encoding time: " + (System.DateTime.Now - dt));
 		
 		if( !string.IsNullOrEmpty(path) )
 			File.WriteAllBytes(path, GetBytes());
@@ -725,14 +721,18 @@ public class JPGEncoder
 		float DCV=0;
 		bytenew=0;
 		bytepos=7;
-		for (int ypos=0; ypos<image.height; ypos+=8) 
+		for (int ypos = 0; ypos < image.height; ypos += 8 ) 
 		{
-			for (int xpos=0; xpos<image.width; xpos+=8) 
+			for (int xpos = 0; xpos < image.width; xpos += 8) 
 			{
 				RGB2YUV(image, xpos, ypos);
 				DCY = ProcessDU(YDU, fdtbl_Y,  DCY, YDC_HT,  YAC_HT);
 				DCU = ProcessDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
 				DCV = ProcessDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+				
+				//If running on a single core system, then give some time to do other stuff
+				if( cores == 1 )
+					Thread.Sleep(0);
 			}
 		}
 

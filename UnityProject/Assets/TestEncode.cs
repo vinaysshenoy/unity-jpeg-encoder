@@ -13,17 +13,17 @@ public class TestEncode : MonoBehaviour
 	// Update is called once per frame
 	private void Update() 
 	{
-		if(Input.GetKeyDown("r"))
+		if(Input.GetKeyDown("p"))
 			StartCoroutine("ScreenshotEncode");
 	}
 	
 	
 	private void Start()
 	{
-		StartCoroutine("ScreenshotEncode");
-		
+		Debug.Log("Press 'p' on the keyborad to take a screen dump");	
 	}
 	
+
 	private IEnumerator ScreenshotEncode()
 	{
 		yield return new WaitForEndOfFrame();
@@ -33,25 +33,23 @@ public class TestEncode : MonoBehaviour
 		
 		// put buffer into texture
 		texture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
-		texture.Apply();
+		texture.Apply(false, false);
 		
-		JPGEncoderMulti encoder = new JPGEncoderMulti(texture, 75, Application.dataPath + "/../testscreen-" + count + ".jpg" );
-		//Encode without save to disk
+		string fullPath = Application.dataPath + "/../testscreen-" + count + ".jpg";
+		JPGEncoder encoder = new JPGEncoder(texture, 75, fullPath );
+		
+		//Exsample of how to encode without save to disk
 //		JPGEncoder encoder = new JPGEncoder(texture, 75);
 		
-		
-//		JPGJavaEncoder javaEncoder = new JPGJavaEncoder(texture, 75);
 		
 		//encoder is threaded; wait for it to finish
 		while(!encoder.isDone)
 			yield return null;
 		
+		Debug.Log("Screendump saved at : " + fullPath);
+		Debug.Log("Done encoding and bytes ready for use. e.g. send over network, write to disk");
+		Debug.Log("Size: " + encoder.GetBytes().Length + " bytes");
 		
-//		DateTime dt = DateTime.Now;
-//		byte[] png =  texture.EncodeToPNG();
-//		File.WriteAllBytes(Application.dataPath + "/../testscreen-" + count + ".png", png);
-//		Debug.Log("PNG encode time: " + (DateTime.Now - dt));
-			
 		count++;
 		
 	}
