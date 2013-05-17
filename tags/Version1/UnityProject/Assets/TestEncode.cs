@@ -20,7 +20,7 @@ public class TestEncode : MonoBehaviour
 	
 	private void Start()
 	{
-		Debug.Log("Press 'p' on the keyborad to take a screen dump");	
+		Debug.Log("Press 'p' on the keyboard to take a screendump");	
 	}
 	
 
