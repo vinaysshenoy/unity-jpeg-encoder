@@ -38,7 +38,7 @@ public class TestEncode : MonoBehaviour
 		string fullPath = Application.dataPath + "/../testscreen-" + count + ".jpg";
 		JPGEncoder encoder = new JPGEncoder(texture, 75, fullPath );
 		
-		//Exsample of how to encode without save to disk
+		//How to encode without save to disk
 //		JPGEncoder encoder = new JPGEncoder(texture, 75);
 		
 		
