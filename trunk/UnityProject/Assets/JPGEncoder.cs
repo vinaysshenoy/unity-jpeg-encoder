@@ -540,7 +540,8 @@ public class JPGEncoder
 		}
 	}
 
-	private void writeSOS(){
+	private void WriteSOS()
+	{
 		WriteWord(0xFFDA); // marker
 		WriteWord(12); // length
 		WriteByte(3); // nrofcomponents
@@ -554,7 +555,15 @@ public class JPGEncoder
 		WriteByte(0x3f); // Se
 		WriteByte(0); // Bf
 	}
-
+	
+	private const int resetInterval = 4;
+	private void WriteDRI()
+	{
+		WriteWord(0xFFDD);
+		WriteWord(4); //Length (incl. it self)
+		WriteWord(resetInterval);
+	}
+	
 	// Core processing
 	private int[] DU = new int[64];
 	private float ProcessDU( float[] CDU , float[] fdtbl , float DC , BitString[] HTDC , BitString[] HTAC )
@@ -632,6 +641,11 @@ public class JPGEncoder
 				YDU[pos]=((( 0.29900f)*C.r +( 0.58700f)*C.g+( 0.11400f)*C.b))-128;
 				UDU[pos]=(((-0.16874f)*C.r +(-0.33126f)*C.g+( 0.50000f)*C.b));
 				VDU[pos]=((( 0.50000f)*C.r +(-0.41869f)*C.g+(-0.08131f)*C.b));
+				
+//				YDU[pos]=(((0.299f)*C.r +( 0.587f)*C.g+( 0.114f)*C.b));
+//				UDU[pos]= 0.492f * ( C.b - YDU[pos] );
+//				VDU[pos]= 0.877f * ( C.r - YDU[pos] );
+				
 				pos++;
 			}
 		}
@@ -713,7 +727,8 @@ public class JPGEncoder
 		WriteDQT();
 		WriteSOF0(image.width,image.height);
 		WriteDHT();
-		writeSOS();
+		WriteDRI();
+		WriteSOS();
 		
 		// Encode 8x8 macroblocks
 		float DCY=0;
@@ -721,6 +736,10 @@ public class JPGEncoder
 		float DCV=0;
 		bytenew=0;
 		bytepos=7;
+		
+		int count = 0;
+		int numberOfBlocks = 0;
+		int blockNumber = 0;
 		for (int ypos = 0; ypos < image.height; ypos += 8 ) 
 		{
 			for (int xpos = 0; xpos < image.width; xpos += 8) 
@@ -730,12 +749,37 @@ public class JPGEncoder
 				DCU = ProcessDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
 				DCV = ProcessDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
 				
+				
+				//				Debug.Log( numberOfBlocks );
+				numberOfBlocks++;
+				if( numberOfBlocks == resetInterval)
+				{
+					numberOfBlocks = 0;
+					
+//					Debug.Log(blockNumber);
+					WriteWord(0xFFD0 + blockNumber);
+					//Replace with modulus 8... this just looks like this for debugging...
+					blockNumber++;
+					if(blockNumber == 8)
+						blockNumber = 0;
+					
+					bytenew=0;
+					bytepos=7;
+					DCY = 0;
+					DCU = 0;
+					DCV = 0;
+					count++;
+					
+				}
+				
 				//If running on a single core system, then give some time to do other stuff
 				if( cores == 1 )
 					Thread.Sleep(0);
 			}
 		}
-
+		
+		Debug.Log("Number of reset words: " + count);
+		
 		// Do the bit alignment of the EOI marker
 		if ( bytepos >= 0 ) 
 		{

@@ -20,20 +20,21 @@ public class TestEncode : MonoBehaviour
 	
 	private void Start()
 	{
+		StartCoroutine("ScreenshotEncode");
 		Debug.Log("Press 'p' on the keyboard to take a screendump");	
 	}
 	
 
 	private IEnumerator ScreenshotEncode()
 	{
-		yield return new WaitForEndOfFrame();
-		
-		// create a texture to pass to encoding
-		texture = new Texture2D (Screen.width, Screen.height, TextureFormat.RGB24, false);
-		
-		// put buffer into texture
-		texture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
-		texture.Apply(false, false);
+//		yield return new WaitForEndOfFrame();
+//		
+//		// create a texture to pass to encoding
+//		texture = new Texture2D (Screen.width, Screen.height, TextureFormat.RGB24, false);
+//		
+//		// put buffer into texture
+//		texture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+//		texture.Apply(false, false);
 		
 		string fullPath = Application.dataPath + "/../testscreen-" + count + ".jpg";
 		JPGEncoder encoder = new JPGEncoder(texture, 75, fullPath );
