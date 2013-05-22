@@ -838,20 +838,36 @@ public class JPGEncoder
 		
 		System.DateTime dt = System.DateTime.Now;
 		
-		Thread worker = new Thread(ProcessTask);
+		ThreadStart threadStart = delegate { ProcessTask(); }; 
+		Thread worker = new Thread(threadStart);
+		worker.IsBackground = true;
 		worker.Start();
 		
-//		Thread worker2 = new Thread(ProcessTask);
-//		worker2.Start();
+		ThreadStart threadStart2 = delegate { ProcessTask(); }; 
+		Thread worker2 = new Thread(threadStart2);
+		worker2.IsBackground = true;
+		worker2.Start();
+		
+		ThreadStart threadStart3 = delegate { ProcessTask(); }; 
+		Thread worker3 = new Thread(threadStart3);
+		worker3.IsBackground = true;
+		worker3.Start();
+		
+		ThreadStart threadStart4 = delegate { ProcessTask(); }; 
+		Thread worker4 = new Thread(threadStart4);
+		worker4.IsBackground = true;
+		worker4.Start();
 		
 //		Thread worker3 = new Thread(ProcessTask);
 //		worker3.Start();
 		
-		while( !WorkDone() )
-			Thread.Sleep(5);
+		worker.Join();
+		worker2.Join();
+		worker3.Join();
+		worker4.Join();
+		Debug.Log(worker.IsAlive);
 		
-		
-		Thread.Sleep(100);
+//		Thread.Sleep(1000);
 		Debug.Log("WorkDone : " + (System.DateTime.Now - dt));
 		
 //		mainBuffer.WriteBuffer(output.GetAllBytes());
@@ -896,7 +912,7 @@ public class JPGEncoder
 			if( currentTask == null )
 				break;
 			
-			output = new ByteArray();
+
 			for(int i = 0; i < currentTask.xposCollection.Count; i++)
 			{
 				RGB2YUV(image, currentTask.xposCollection[i], currentTask.yposCollection[i]);
@@ -915,7 +931,9 @@ public class JPGEncoder
 			WriteRstMarker(ref output);
 			
 			currentTask.buffer = output;
+			output = new ByteArray();
 			completedTasks.Add(currentTask.index, currentTask);
+			
 		}
 		
 	}
