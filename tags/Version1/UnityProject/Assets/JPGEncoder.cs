@@ -653,8 +653,10 @@ public class JPGEncoder
 	private string path;
 	private int cores = 0;
 	//Contructor that doesn't save the data to disk
-	public JPGEncoder( Texture2D texture, float quality) : this(texture, quality, ""){ }
-	public JPGEncoder( Texture2D texture, float quality, string path )
+	public JPGEncoder( Texture2D texture, float quality) : this(texture, quality, "", false){ }
+	public JPGEncoder( Texture2D texture, float quality, bool blocking) : this(texture, quality, "", blocking){ }
+	public JPGEncoder( Texture2D texture, float quality, string path) : this(texture, quality, path, false){ }
+	public JPGEncoder( Texture2D texture, float quality, string path, bool blocking )
 	{	
 		this.path = path;
 		// save out texture data to our own data structure
@@ -667,6 +669,9 @@ public class JPGEncoder
 		
 		Thread thread = new Thread(DoEncoding);
 		thread.Start();		
+		
+		if( blocking )
+			thread.Join();
 	}
 	
 	/**

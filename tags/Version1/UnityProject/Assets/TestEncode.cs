@@ -40,11 +40,16 @@ public class TestEncode : MonoBehaviour
 		
 		//How to encode without save to disk
 //		JPGEncoder encoder = new JPGEncoder(texture, 75);
-		
-		
+				
 		//encoder is threaded; wait for it to finish
 		while(!encoder.isDone)
 			yield return null;
+		
+		
+//		How to encode but use the JPG encoder as a blocking method. This way it isn't needed to wait for it to finish
+//		But the unity main thread will freeze while the encoding takes place (just like Texture.EncodeToPNG() does)
+//		JPGEncoder encoder1 = new JPGEncoder(texture, 75, true);
+
 		
 		Debug.Log("Screendump saved at : " + fullPath);
 		Debug.Log("Done encoding and bytes ready for use. e.g. send over network, write to disk");
