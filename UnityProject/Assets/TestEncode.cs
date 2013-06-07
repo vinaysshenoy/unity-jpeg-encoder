@@ -46,7 +46,7 @@ public class TestEncode : MonoBehaviour
 			yield return null;
 		
 		
-//		How to encode but use the JPG encoder as a blocking method. This way it isn't needed to wait for it to finish
+//		How to use the JPG encoder as a blocking method. This way it isn't needed to wait for it to finish
 //		But the unity main thread will freeze while the encoding takes place (just like Texture.EncodeToPNG() does)
 //		JPGEncoder encoder1 = new JPGEncoder(texture, 75, true);
 
