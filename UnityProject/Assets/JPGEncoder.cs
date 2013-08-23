@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
@@ -28,14 +27,9 @@ public class JPGEncoder
 		/**
 		* Function from AS3--add a byte to our stream
 		*/
-		public void WriteByte( byte value )
+		public void WriteByte( byte value  )
 		{
 			writer.Write(value);
-		}
-		
-		public void WriteBuffer( byte[] buffer )
-		{
-			writer.Write(buffer);
 		}
 		
 		/**
@@ -289,7 +283,7 @@ public class JPGEncoder
 	// IO functions
 	private uint bytenew = 0;
 	private int bytepos = 7;
-	private ByteArray mainBuffer = new ByteArray();
+	private ByteArray byteout = new ByteArray();
 	
 	/**
 	* Get the result
@@ -301,7 +295,7 @@ public class JPGEncoder
 			return null;
 		}
 		
-		return mainBuffer.GetAllBytes();
+		return byteout.GetAllBytes();
 	}
 	
 	private void WriteBits ( BitString bs  ){
@@ -331,54 +325,16 @@ public class JPGEncoder
 			}
 		}
 	}
-	
-	private void WriteBits ( BitString bs, ref ByteArray output, ref int bytepos, ref uint bytenew )
-	{
-		int value = bs.value;
-		int posval = bs.length-1;
-		while ( posval >= 0 ) 
-		{
-			if ( (value & System.Convert.ToUInt32(1 << posval)) != 0 )
-			{
-				bytenew |= System.Convert.ToUInt32(1 << bytepos);
-			}
-			posval--;
-			bytepos--;
-			if (bytepos < 0) 
-			{
-				if (bytenew == 0xFF) 
-				{
-					output.WriteByte(0xFF);
-					output.WriteByte(0);
-//					WriteByte(0xFF);
-//					WriteByte(0);
-				}
-				else
-				{
-					output.WriteByte((byte)bytenew);
-//					WriteByte((byte)bytenew);
-				}
-				bytepos=7;
-				bytenew=0;
-			}
-		}
-	}
 
 	private void WriteByte ( byte value  )
 	{
-		mainBuffer.WriteByte(value);
+		byteout.WriteByte(value);
 	}
 
 	private void WriteWord ( int value )
 	{
 		WriteByte((byte) (( value >> 8)	&0xFF) );
 		WriteByte((byte) (( value )		&0xFF) );
-	}
-	
-	private void WriteWord ( int value, ref ByteArray output )
-	{
-		output.WriteByte((byte) (( value >> 8)	&0xFF) );
-		output.WriteByte((byte) (( value )		&0xFF) );
 	}
 
 	// DCT & quantization core
@@ -584,8 +540,7 @@ public class JPGEncoder
 		}
 	}
 
-	private void WriteSOS()
-	{
+	private void writeSOS(){
 		WriteWord(0xFFDA); // marker
 		WriteWord(12); // length
 		WriteByte(3); // nrofcomponents
@@ -599,19 +554,10 @@ public class JPGEncoder
 		WriteByte(0x3f); // Se
 		WriteByte(0); // Bf
 	}
-	
-	private const int resetInterval = 4;
-	private void WriteDRI()
-	{
-		WriteWord(0xFFDD);
-		WriteWord(4); //Length (incl. it self)
-		WriteWord(resetInterval);
-	}
-	
+
 	// Core processing
 	private int[] DU = new int[64];
-	private float ProcessDU( float[] CDU , float[] fdtbl , float DC , BitString[] HTDC , BitString[] HTAC,
-							 ref ByteArray output, ref int bytepos, ref uint bytenew)
+	private float ProcessDU( float[] CDU , float[] fdtbl , float DC , BitString[] HTDC , BitString[] HTAC )
 	{
 		BitString EOB = HTAC[0x00];
 		BitString M16zeroes = HTAC[0xF0];
@@ -629,12 +575,12 @@ public class JPGEncoder
 		//Encode DC
 		if (Diff==0) 
 		{
-			WriteBits(HTDC[0], ref output, ref bytepos, ref bytenew); // Diff might be 0
+			WriteBits(HTDC[0]); // Diff might be 0
 		} 
 		else 
 		{
-			WriteBits(HTDC[category[32767+Diff]], ref output, ref bytepos, ref bytenew);
-			WriteBits(bitcode[32767+Diff], ref output, ref bytepos, ref bytenew);
+			WriteBits(HTDC[category[32767+Diff]]);
+			WriteBits(bitcode[32767+Diff]);
 		}
 		//Encode ACs
 		int end0pos = 63;
@@ -643,7 +589,7 @@ public class JPGEncoder
 		//end0pos = first element in reverse order !=0
 		if ( end0pos == 0) 
 		{
-			WriteBits(EOB, ref output, ref bytepos, ref bytenew);
+			WriteBits(EOB);
 			return DC;
 		}
 		i = 1;
@@ -657,17 +603,17 @@ public class JPGEncoder
 			{
 				for (int nrmarker=1; nrmarker <= nrzeroes/16; nrmarker++) 
 				{
-					WriteBits(M16zeroes, ref output, ref bytepos, ref bytenew);
+					WriteBits(M16zeroes);
 				}
 				nrzeroes = (nrzeroes&0xF);
 			}
-			WriteBits(HTAC[nrzeroes*16+category[32767+DU[i]]], ref output, ref bytepos, ref bytenew);
-			WriteBits(bitcode[32767+DU[i]], ref output, ref bytepos, ref bytenew);
+			WriteBits(HTAC[nrzeroes*16+category[32767+DU[i]]]);
+			WriteBits(bitcode[32767+DU[i]]);
 			i++;
 		}
 		if ( end0pos != 63 ) 
 		{
-			WriteBits(EOB, ref output, ref bytepos, ref bytenew);
+			WriteBits(EOB);
 		}
 		return DC;
 	}
@@ -686,11 +632,6 @@ public class JPGEncoder
 				YDU[pos]=((( 0.29900f)*C.r +( 0.58700f)*C.g+( 0.11400f)*C.b))-128;
 				UDU[pos]=(((-0.16874f)*C.r +(-0.33126f)*C.g+( 0.50000f)*C.b));
 				VDU[pos]=((( 0.50000f)*C.r +(-0.41869f)*C.g+(-0.08131f)*C.b));
-				
-//				YDU[pos]=(((0.299f)*C.r +( 0.587f)*C.g+( 0.114f)*C.b));
-//				UDU[pos]= 0.492f * ( C.b - YDU[pos] );
-//				VDU[pos]= 0.877f * ( C.r - YDU[pos] );
-				
 				pos++;
 			}
 		}
@@ -712,8 +653,10 @@ public class JPGEncoder
 	private string path;
 	private int cores = 0;
 	//Contructor that doesn't save the data to disk
-	public JPGEncoder( Texture2D texture, float quality) : this(texture, quality, ""){ }
-	public JPGEncoder( Texture2D texture, float quality, string path )
+	public JPGEncoder( Texture2D texture, float quality) : this(texture, quality, "", false){ }
+	public JPGEncoder( Texture2D texture, float quality, bool blocking) : this(texture, quality, "", blocking){ }
+	public JPGEncoder( Texture2D texture, float quality, string path) : this(texture, quality, path, false){ }
+	public JPGEncoder( Texture2D texture, float quality, string path, bool blocking )
 	{	
 		this.path = path;
 		// save out texture data to our own data structure
@@ -726,6 +669,9 @@ public class JPGEncoder
 		
 		Thread thread = new Thread(DoEncoding);
 		thread.Start();		
+		
+		if( blocking )
+			thread.Join();
 	}
 	
 	/**
@@ -762,7 +708,7 @@ public class JPGEncoder
 	private void Encode()
 	{
 		// Initialize bit writer
-		mainBuffer = new ByteArray();
+		byteout = new ByteArray();
 		bytenew=0;
 		bytepos=7;
 
@@ -772,8 +718,7 @@ public class JPGEncoder
 		WriteDQT();
 		WriteSOF0(image.width,image.height);
 		WriteDHT();
-		WriteDRI();
-		WriteSOS();
+		writeSOS();
 		
 		// Encode 8x8 macroblocks
 		float DCY=0;
@@ -781,106 +726,21 @@ public class JPGEncoder
 		float DCV=0;
 		bytenew=0;
 		bytepos=7;
-		
-		int count = 0;
-		int numberOfBlocks = 0;
-
-
-		taskQueue = new Queue<Task>();
-		completedTasks = new SortedList<int, Task>();
-		
-		List<int> xposCollection = new List<int>();
-		List<int> yposCollection = new List<int>();
-		
 		for (int ypos = 0; ypos < image.height; ypos += 8 ) 
 		{
 			for (int xpos = 0; xpos < image.width; xpos += 8) 
 			{
+				RGB2YUV(image, xpos, ypos);
+				DCY = ProcessDU(YDU, fdtbl_Y,  DCY, YDC_HT,  YAC_HT);
+				DCU = ProcessDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
+				DCV = ProcessDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
 				
-				xposCollection.Add( xpos );
-				yposCollection.Add( ypos );
-				
-//				RGB2YUV(image, xpos, ypos);
-//				DCY = ProcessDU(YDU, fdtbl_Y,  DCY, YDC_HT,  YAC_HT,  ref output, ref bytepos, ref bytenew);
-//				DCU = ProcessDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT, ref output, ref bytepos, ref bytenew);
-//				DCV = ProcessDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT, ref output, ref bytepos, ref bytenew);
-//				
-				
-				//				Debug.Log( numberOfBlocks );
-				numberOfBlocks++;
-				if( numberOfBlocks == resetInterval)
-				{
-					numberOfBlocks = 0;
-					
-//					Debug.Log(blockNumber);
-//					WriteWord(0xFFD0 + blockNumber, ref output);
-//					
-//					blockNumber = ++blockNumber % 8;
-//					
-//					bytenew=0;
-//					bytepos=7;
-//					DCY = 0;
-//					DCU = 0;
-//					DCV = 0;
-					count++;
-					
-					taskQueue.Enqueue( new Task(count, xposCollection, yposCollection ) );
-					xposCollection.Clear();
-					yposCollection.Clear();
-					
-				}
-//				
-//				//If running on a single core system, then give some time to do other stuff
-//				if( cores == 1 )
-//					Thread.Sleep(0);
+				//If running on a single core system, then give some time to do other stuff
+				if( cores == 1 )
+					Thread.Sleep(0);
 			}
 		}
-		
-		System.DateTime dt = System.DateTime.Now;
-		
-		ThreadStart threadStart = delegate { ProcessTask(); }; 
-		Thread worker = new Thread(threadStart);
-		worker.IsBackground = true;
-		worker.Start();
-		
-		ThreadStart threadStart2 = delegate { ProcessTask(); }; 
-		Thread worker2 = new Thread(threadStart2);
-		worker2.IsBackground = true;
-		worker2.Start();
-		
-		ThreadStart threadStart3 = delegate { ProcessTask(); }; 
-		Thread worker3 = new Thread(threadStart3);
-		worker3.IsBackground = true;
-		worker3.Start();
-		
-		ThreadStart threadStart4 = delegate { ProcessTask(); }; 
-		Thread worker4 = new Thread(threadStart4);
-		worker4.IsBackground = true;
-		worker4.Start();
-		
-//		Thread worker3 = new Thread(ProcessTask);
-//		worker3.Start();
-		
-		worker.Join();
-		worker2.Join();
-		worker3.Join();
-		worker4.Join();
-		Debug.Log(worker.IsAlive);
-		
-//		Thread.Sleep(1000);
-		Debug.Log("WorkDone : " + (System.DateTime.Now - dt));
-		
-//		mainBuffer.WriteBuffer(output.GetAllBytes());
-		Debug.Log("Number of reset words: " + count);
-		
-		//Merge everything
-		foreach(KeyValuePair<int, Task> kvp in completedTasks)
-		{
-//			Debug.Log(kvp.Key);
-			mainBuffer.WriteBuffer( kvp.Value.buffer.GetAllBytes() );	
-			
-		}
-		
+
 		// Do the bit alignment of the EOI marker
 		if ( bytepos >= 0 ) 
 		{
@@ -894,96 +754,6 @@ public class JPGEncoder
 		
 		//Signal we are done
 		isDone = true;
-	}
-	
-	private void ProcessTask()
-	{
-
-		uint bytenew=0;
-		int bytepos=7;
-		float DCY=0;
-		float DCU=0;
-		float DCV=0;
-		ByteArray output = new ByteArray();
-		Task currentTask = null;
-		while( true )
-		{
-			currentTask = GetNextTask();
-			if( currentTask == null )
-				break;
-			
-
-			for(int i = 0; i < currentTask.xposCollection.Count; i++)
-			{
-				RGB2YUV(image, currentTask.xposCollection[i], currentTask.yposCollection[i]);
-				DCY = ProcessDU(YDU, fdtbl_Y,  DCY, YDC_HT,  YAC_HT,  ref output, ref bytepos, ref bytenew);
-				DCU = ProcessDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT, ref output, ref bytepos, ref bytenew);
-				DCV = ProcessDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT, ref output, ref bytepos, ref bytenew);
-				
-			}
-			
-			bytenew=0;
-			bytepos=7;
-			DCY = 0;
-			DCU = 0;
-			DCV = 0;
-			
-			WriteRstMarker(ref output);
-			
-			currentTask.buffer = output;
-			output = new ByteArray();
-			completedTasks.Add(currentTask.index, currentTask);
-			
-		}
-		
-	}
-	
-	private int blockNumber = 0; 
-	private void WriteRstMarker(ref ByteArray output)
-	{
-		WriteWord(0xFFD0 + blockNumber, ref output);
-		blockNumber = ++blockNumber % 8;
-	}
-	
-	private Queue<Task> taskQueue;
-	private Task GetNextTask()
-	{
-		lock(this)
-		{
-			if( taskQueue.Count == 0 )
-				return null;
-			else return taskQueue.Dequeue();
-		}
-	}
-	
-	private bool WorkDone()
-	{
-//		lock(this)
-//		{
-			return (taskQueue.Count == 0);
-//		}
-	}
-	
-	private SortedList<int, Task> completedTasks;
-	
-	private class Task
-	{
-		public int index;
-		public List<int> xposCollection;
-		public List<int> yposCollection;
-		public ByteArray buffer;
-		
-		public Task(int index, List<int> xpos, List<int> ypos)
-		{
-			this.index = index;
-			buffer = new ByteArray();
-			
-			this.xposCollection = new List<int>();
-			this.xposCollection.AddRange( xpos );
-			
-			this.yposCollection = new List<int>();
-			this.yposCollection.AddRange( ypos );
-		}
 	}
 }
 
