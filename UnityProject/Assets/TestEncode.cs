@@ -35,8 +35,12 @@ public class TestEncode : MonoBehaviour
 		texture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
 		texture.Apply(false, false);
 		
-		string fullPath = Application.dataPath + "/../testscreen-" + count + ".jpg";
-		JPGEncoder encoder = new JPGEncoder(texture, 75, fullPath );
+		
+//		string fullPath = Application.dataPath + "/../testscreen-" + count + ".jpg";
+//		JPGEncoder encoder = new JPGEncoder(texture, 75, fullPath );
+		
+		string fullPath = Application.dataPath + "/../testscreen-" + count + ".png";
+		PNGEncoder encoder = new PNGEncoder( texture, fullPath );
 		
 		//How to encode without save to disk
 //		JPGEncoder encoder = new JPGEncoder(texture, 75);
