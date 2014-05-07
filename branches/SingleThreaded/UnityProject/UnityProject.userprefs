@@ -1,9 +1,10 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace />
-  <MonoDevelop.Ide.Workbench ActiveDocument="..\..\Sandbox\Hologram\Assets\Shaders\Hologram.shader">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\PNGEncoder.cs">
     <Files>
-      <File FileName="..\..\Sandbox\Hologram\Assets\Shaders\Hologram.shader" Line="21" Column="1" />
-      <File FileName="..\..\Sandbox\Hologram\Assets\Standard Assets\Glass Refraction (Pro Only)\Sources\Shaders\Glass-Stained-BumpDistort.shader" Line="7" Column="33" />
+      <File FileName="Assets\PNGEncoder.cs" Line="218" Column="6" />
+      <File FileName="Assets\JPGEncoder.cs" Line="701" Column="1" />
+      <File FileName="Assets\TestEncode.cs" Line="43" Column="38" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
